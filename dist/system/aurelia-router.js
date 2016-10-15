@@ -625,7 +625,7 @@ System.register(['aurelia-logging', 'aurelia-route-recognizer', 'aurelia-depende
       router.events.publish('router:navigation:' + eventName, eventArgs);
       router.events.publish('router:navigation:complete', eventArgs);
     } else {
-      router.events.publish('router:navigation:innerInstruction:resolve', eventArgs);
+      router.events.publish('router:navigation:child:complete', eventArgs);
     }
 
     return result;

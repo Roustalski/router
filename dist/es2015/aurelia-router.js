@@ -1519,7 +1519,7 @@ function resolveInstruction(instruction, result, isInnerInstruction, router) {
     router.events.publish(`router:navigation:${ eventName }`, eventArgs);
     router.events.publish('router:navigation:complete', eventArgs);
   } else {
-    router.events.publish('router:navigation:innerInstruction:resolve', eventArgs);
+    router.events.publish('router:navigation:child:complete', eventArgs);
   }
 
   return result;
