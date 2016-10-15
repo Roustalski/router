@@ -256,13 +256,21 @@ System.register(['aurelia-logging', 'aurelia-route-recognizer', 'aurelia-depende
   }
 
   function evaluateNavigationStrategy(instruction, evaluator, context) {
-    return Promise.resolve(evaluator.call(context, instruction)).then(function () {
+    return Promise.resolve(evaluator.call(context, instruction)).then(function (modules) {
       if (!('viewPorts' in instruction.config)) {
-        instruction.config.viewPorts = {
-          'default': {
-            moduleId: instruction.config.moduleId
-          }
-        };
+        instruction.config.viewPorts = {};
+      }
+
+      if (typeof modules === 'string') {
+        modules = { 'default': modules };
+      } else if (modules === undefined) {
+        modules = { 'default': instruction.config.moduleId };
+      }
+
+      for (var key in modules) {
+        var vp = instruction.config.viewPorts[key] || {};
+        vp.moduleId = modules[key];
+        instruction.config.viewPorts[key] = vp;
       }
 
       return instruction;
@@ -599,9 +607,9 @@ System.register(['aurelia-logging', 'aurelia-route-recognizer', 'aurelia-depende
   function resolveInstruction(instruction, result, isInnerInstruction, router) {
     instruction.resolve(result);
 
+    var eventArgs = { instruction: instruction, result: result };
     if (!isInnerInstruction) {
       router.isNavigating = false;
-      var eventArgs = { instruction: instruction, result: result };
       var eventName = void 0;
 
       if (result.output instanceof Error) {
@@ -616,6 +624,8 @@ System.register(['aurelia-logging', 'aurelia-route-recognizer', 'aurelia-depende
 
       router.events.publish('router:navigation:' + eventName, eventArgs);
       router.events.publish('router:navigation:complete', eventArgs);
+    } else {
+      router.events.publish('router:navigation:innerInstruction:resolve', eventArgs);
     }
 
     return result;
@@ -1072,9 +1082,9 @@ System.register(['aurelia-logging', 'aurelia-route-recognizer', 'aurelia-depende
 
             if (Array.isArray(config.route)) {
               for (var i = 0, ii = config.route.length; i < ii; ++i) {
-                var current = Object.assign({}, config);
-                current.route = config.route[i];
-                routeConfigs.push(current);
+                var _current = Object.assign({}, config);
+                _current.route = config.route[i];
+                routeConfigs.push(_current);
               }
             } else {
               routeConfigs.push(Object.assign({}, config));
@@ -1372,11 +1382,11 @@ System.register(['aurelia-logging', 'aurelia-route-recognizer', 'aurelia-depende
           var nav = this.navigation;
 
           for (var i = 0, length = nav.length; i < length; i++) {
-            var current = nav[i];
-            if (!current.config.href) {
-              current.href = _createRootedPath(current.relativeHref, this.baseUrl, this.history._hasPushState);
+            var _current2 = nav[i];
+            if (!_current2.config.href) {
+              _current2.href = _createRootedPath(_current2.relativeHref, this.baseUrl, this.history._hasPushState);
             } else {
-              current.href = _normalizeAbsolutePath(current.config.href, this.history._hasPushState);
+              _current2.href = _normalizeAbsolutePath(_current2.config.href, this.history._hasPushState);
             }
           }
         };

@@ -921,13 +921,21 @@ function validateRouteConfig(config, routes) {
 }
 
 function evaluateNavigationStrategy(instruction, evaluator, context) {
-  return Promise.resolve(evaluator.call(context, instruction)).then(() => {
+  return Promise.resolve(evaluator.call(context, instruction)).then(modules => {
     if (!('viewPorts' in instruction.config)) {
-      instruction.config.viewPorts = {
-        'default': {
-          moduleId: instruction.config.moduleId
-        }
-      };
+      instruction.config.viewPorts = {};
+    }
+
+    if (typeof modules === 'string') {
+      modules = { 'default': modules };
+    } else if (modules === undefined) {
+      modules = { 'default': instruction.config.moduleId };
+    }
+
+    for (let key in modules) {
+      let vp = instruction.config.viewPorts[key] || {};
+      vp.moduleId = modules[key];
+      instruction.config.viewPorts[key] = vp;
     }
 
     return instruction;
@@ -1493,9 +1501,9 @@ function processResult(instruction, result, instructionCount, router) {
 function resolveInstruction(instruction, result, isInnerInstruction, router) {
   instruction.resolve(result);
 
+  let eventArgs = { instruction, result };
   if (!isInnerInstruction) {
     router.isNavigating = false;
-    let eventArgs = { instruction, result };
     let eventName;
 
     if (result.output instanceof Error) {
@@ -1510,6 +1518,8 @@ function resolveInstruction(instruction, result, isInnerInstruction, router) {
 
     router.events.publish(`router:navigation:${ eventName }`, eventArgs);
     router.events.publish('router:navigation:complete', eventArgs);
+  } else {
+    router.events.publish('router:navigation:innerInstruction:resolve', eventArgs);
   }
 
   return result;
